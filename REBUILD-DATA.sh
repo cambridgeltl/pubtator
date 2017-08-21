@@ -12,3 +12,5 @@ for script in "$SCRIPTDIR/scripts/"[0-9][0-9]*.sh; do
     echo "Completed $script" >&2
     echo >&2
 done
+
+echo "DONE, "`basename $0`" completed succesfully."
