@@ -1,14 +1,10 @@
 # Support for Web Annotation format.
 
 import re
-import json
 
 from urlparse import urldefrag
 from logging import warn, error
-
-
-def pretty_dumps(obj):
-    return json.dumps(obj, sort_keys=True, indent=2, separators=(',', ': '))
+from common import json_loads, pretty_dumps
 
 
 class FormatError(Exception):
@@ -150,7 +146,7 @@ class SpanAnnotation(Annotation):
 
 def read_jsonld_annotations(fn):
     with open(fn) as f:
-        data = json.loads(f.read())
+        data = json_loads(f.read())
     annotations, ids = [], set()
     for d in data:
         a = Annotation.from_dict(d)

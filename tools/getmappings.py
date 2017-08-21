@@ -6,20 +6,16 @@ from __future__ import print_function
 
 import sys
 import os
-import json
 import logging
 
 from collections import defaultdict
 from logging import info, warn, error
 
 from webannotation import read_annotations, SpanAnnotation
+from common import pretty_dumps
 
 
 logging.basicConfig(level=logging.INFO)
-
-
-def pretty_dumps(obj):
-    return json.dumps(obj, sort_keys=True, indent=2, separators=(',', ': '))
 
 
 def argparser():

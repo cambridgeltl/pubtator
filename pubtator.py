@@ -1,12 +1,13 @@
 # Support for reading PubTator format.
 
 import re
-import json
 import itertools
 
 from copy import deepcopy
 from collections import Iterator
 from logging import warn
+
+from tools.common import pretty_dumps
 
 
 # Regular expressions matching PubTator format embedded text, span
@@ -58,10 +59,6 @@ def next_in_seq(prefix, taken):
     for i in itertools.count(1):
         if prefix+str(i) not in taken:
             return prefix+str(i)
-
-
-def pretty_dumps(obj):
-    return json.dumps(obj, sort_keys=True, indent=2, separators=(',', ': '))
 
 
 class SpanAnnotation(object):

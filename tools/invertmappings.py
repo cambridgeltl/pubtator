@@ -6,11 +6,9 @@
 from __future__ import print_function
 
 import sys
-import json
 
-
-def pretty_dumps(obj):
-    return json.dumps(obj, sort_keys=True, indent=2, separators=(',', ': '))
+from logging import warn
+from common import json_load, pretty_dumps
 
 
 def invert(mappings):
@@ -23,9 +21,10 @@ def invert(mappings):
             inverted[id_][mention] = count
     return inverted
 
+
 def process(fn):
     with open(fn) as f:
-        mappings = json.load(f)
+        mappings = json_load(f)
     inverted = invert(mappings)
     print(pretty_dumps(inverted))
 

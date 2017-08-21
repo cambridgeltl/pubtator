@@ -6,19 +6,15 @@ from __future__ import print_function
 
 import os
 import sys
-import json
 import logging
 
 from collections import defaultdict
 from logging import info, warn, error
+from common import json_load, pretty_dump
 
 
 class FormatError(Exception):
     pass
-
-
-def pretty_dump(obj, out=sys.stdout):
-    return json.dump(obj, out, sort_keys=True, indent=2, separators=(',', ': '))
 
 
 def argparser():
@@ -96,7 +92,7 @@ def map_ids(data, mapping, options=None):
 
 def map_file_ids(fn, mapping, options=None):
     with open(fn) as f:
-        data = json.load(f)
+        data = json_load(f)
     map_ids(data, mapping, options)
     with open(fn, 'wt') as f:
         pretty_dump(data, f)

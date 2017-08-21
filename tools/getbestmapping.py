@@ -5,16 +5,13 @@
 from __future__ import print_function
 
 import sys
-import json
 
-
-def pretty_dumps(obj):
-    return json.dumps(obj, sort_keys=True, indent=2, separators=(',', ': '))
+from common import json_load, pretty_dumps
 
 
 def process(fn):
     with open(fn) as f:
-        mappings = json.load(f)
+        mappings = json_load(f)
     best = {}
     for s, ic in mappings.iteritems():
         best[s] = sorted(ic.items(), key=lambda kv: -kv[1])[0][0]

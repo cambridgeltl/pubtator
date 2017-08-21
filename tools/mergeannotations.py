@@ -7,7 +7,6 @@ from __future__ import print_function
 import os
 import sys
 import re
-import json
 import logging
 import errno
 
@@ -15,10 +14,7 @@ from collections import defaultdict
 from logging import debug, info, warn, error
 
 from webannotation import read_annotations
-
-
-def pretty_dump(obj, out):
-    return json.dump(obj, out, sort_keys=True, indent=2, separators=(',', ': '))
+from common import pretty_dump
 
 
 def argparser():
