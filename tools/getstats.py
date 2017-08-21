@@ -38,6 +38,10 @@ def process_file(fn, options, stats):
     for a in annotations:
         stats['total'] += 1
         stats[type(a).__name__] += 1
+        if 'type' in a.body:
+            stats['{}, type {}'.format(type(a).__name__, a.body['type'])] += 1
+        else:
+            stats['{}, untyped'.format(type(a).__name__)] += 1
 
 
 def process(files, options, stats=None, recursed=False):
