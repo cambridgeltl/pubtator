@@ -6,8 +6,8 @@ SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 SOURCES="
 ftp://ftp.ncbi.nlm.nih.gov/pub/lu/PubTator/bioconcepts2pubtator_offsets.sample
+ftp://ftp.ncbi.nlm.nih.gov/pub/lu/PubTator/bioconcepts2pubtator_offsets.gz
 "
-# ftp://ftp.ncbi.nlm.nih.gov/pub/lu/PubTator/bioconcepts2pubtator_offsets.gz
 
 DATADIR="$SCRIPTDIR/../data/original-data"
 
@@ -23,8 +23,11 @@ for url in $SOURCES; do
     elif [[ "$bn" == "bioconcepts2pubtator_offsets.gz" ]]; then
 	bn="complete.pubtator.gz"
     fi
+    un=${bn%.gz}
     if [ -e "$DATADIR/$bn" ]; then
 	echo "$DATADIR/$bn exists, skipping download." >&2
+    elif [ -e "$DATADIR/$un" ]; then
+	echo "$DATADIR/$un exists, skipping download." >&2
     else
 	echo "Downloading $url to $DATADIR/$bn ..." >&2
 	wget -O "$DATADIR/$bn" "$url"
