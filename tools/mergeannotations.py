@@ -20,6 +20,8 @@ from common import pretty_dump
 def argparser():
     import argparse
     ap = argparse.ArgumentParser()
+    ap.add_argument('-f', '--first', default=False, action='store_true',
+                    help='Use files in first argument when missing (with -r)')
     ap.add_argument('-o', '--output', metavar='DIR', default=None,
                     help='Output directory')
     ap.add_argument('-r', '--recurse', default=False, action='store_true',
@@ -156,23 +158,36 @@ def merge_directories(dirs, relative_path='', options=None):
     union = set.union(*dir_files)
     intersection = set.intersection(*dir_files)
 
+    def _list_first(items, sep=' ', max_=10):
+        if len(items) <= max_:
+            return sep.join(items)
+        else:
+            return '{} ...'.format(sep.join(items[:max_]))
+
     if union == intersection:
         files = union
-    elif options and options.union:
-        files = union
-        # Support for --union will require the rest of the code to
-        # allow for the possiblity of missing files and directories and
-        # treat these as empty sets of annotations and files, resp.
-        raise NotImplementedError('--union')
     else:
-        skipped = sorted(list(union-intersection))
-        if len(skipped) < 10:
-            skiptxt = ' '.join(skipped)
+        if options and options.first:
+            extra = sorted(list(union-dir_files[0]))
+            missing = sorted(list(dir_files[0]-intersection))
+            if extra:
+                warn('skipping {} files not in {}: {}'.format(
+                    len(extra), dirs[0], _list_first(extra)))
+            if missing:
+                warn('merging {} non-overlapping files: {}'.format(
+                    len(missing), _list_first(missing)))
+            files = dir_files[0]
+        elif options and options.union:
+            diff = sorted(list(union-intersection))
+            warn('merging {} non-overlapping files: {}'.format(
+                len(diff), _list_first(diff)))
+            files = union
         else:
-            skiptxt = '{} ...'.format(' '.join(skipped[:10]))
-        warn('skipping {} non-overlapping files (consider --union): {}'.format(
-            len(skipped), skiptxt))
-        files = intersection
+            diff = sorted(list(union-intersection))
+            warn('skipping {} non-overlapping files '
+                 '(consider --first or --union): {}'.format(
+                     len(diff), _list_first(diff)))
+            files = intersection
 
     info('processing {} files in {}'.format(len(files), ' '.join(dirs)))
 
@@ -185,12 +200,13 @@ def merge(paths, options=None, relative_path='', recursed=False):
     files = [p for p in paths if os.path.isfile(p)]
     dirs = [p for p in paths if os.path.isdir(p)]
     missing = [p for p in paths if not os.path.exists(p)]
-    other = [p for p in paths if p not in files and p not in dirs]
+    other = [p for p in paths if
+             p not in files and p not in dirs and p not in missing]
 
     # sanity checks
-    if missing:
+    if missing and (options is None or not (options.union or options.first)):
         raise IOError('no such file or directory: {}'.format(
-            ' '.join(other)))
+            ' '.join(missing)))
     elif other:
         raise ValueError('neither file or directory: {}'.format(
             ' '.join(other)))
