@@ -204,7 +204,7 @@ def merge(paths, options=None, relative_path='', recursed=False):
         return merge_files(files, relative_path, options)
     else:
         assert dirs
-        if recursed and (options is None or not options.recurse):
+        if (options is None or not options.recurse) and not recursed:
             warn('nor recursing into {} (consider --recurse)'.format(
                 ' '.join(dirs)))
         else:
