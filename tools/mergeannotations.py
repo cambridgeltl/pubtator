@@ -11,10 +11,15 @@ import logging
 import errno
 
 from collections import defaultdict
-from logging import debug, info, warn, error
+#from logging import debug, info, warn, error
 
 from webannotation import read_annotations
 from common import pretty_dump
+
+
+logger = logging.getLogger('merge')
+#logger.setLevel(logging.INFO)
+debug, info, warn, error = logger.debug, logger.info, logger.warn, logger.error
 
 
 def argparser():
@@ -116,13 +121,18 @@ def output_annotations(annotations, files, relative_path, options=None):
             pretty_dump(annotations, out)
 
 
-def merge_files(files, relative_path='', options=None):
+def merge_files(files, relative_path='', options=None, stats=None):
+    if stats is None:
+        stats = defaultdict(int)
+
     annotations = []
     for fn in files:
         try:
             annotations.append(read_annotations(fn))
+            stats['input files'] += 1
         except Exception, e:
             error('failed to parse {}: {}'.format(fn, e))
+            stats['errors'] += 1
             raise
 
     resolve_duplicate_ids(annotations)
@@ -130,9 +140,20 @@ def merge_files(files, relative_path='', options=None):
     merged = [a for anns in annotations for a in anns]
 
     output_annotations(merged, files, relative_path, options)
+    stats['output files'] += 1
+
+    if stats['output files'] % 100 == 0:
+        info('Output {} documents ...'.format(stats['output files']))
+
+    return stats
 
 
-def merge_directories(dirs, relative_path='', options=None):
+def merge_directories(dirs, relative_path='', options=None, stats=None):
+    if stats is None:
+        stats = defaultdict(int)
+
+    stats['directories'] += 1
+
     dir_files = [os.listdir(d) for d in dirs]
 
     # filter to files/directories to consider for merge
@@ -145,7 +166,7 @@ def merge_directories(dirs, relative_path='', options=None):
                 if options and options.recurse:
                     filtered.append(f)
                 else:
-                    info('skipping dir {} (consider --recurse)'.format(p))
+                    warn('skipping dir {} (consider --recurse)'.format(p))
             elif os.path.isfile(p):
                 _, ext = os.path.splitext(os.path.basename(p))
                 if options is None or ext == options.suffix:
@@ -171,32 +192,41 @@ def merge_directories(dirs, relative_path='', options=None):
             extra = sorted(list(union-dir_files[0]))
             missing = sorted(list(dir_files[0]-intersection))
             if extra:
-                warn('skipping {} files not in {}: {}'.format(
+                debug('skipping {} files not in {}: {}'.format(
                     len(extra), dirs[0], _list_first(extra)))
+                stats['skipped (not in first set)'] += len(extra)
             if missing:
-                warn('merging {} non-overlapping files: {}'.format(
+                debug('merging {} non-overlapping files: {}'.format(
                     len(missing), _list_first(missing)))
+                stats['partial (not in all sets)'] += len(missing)
             files = dir_files[0]
         elif options and options.union:
             diff = sorted(list(union-intersection))
-            warn('merging {} non-overlapping files: {}'.format(
+            debug('merging {} non-overlapping files: {}'.format(
                 len(diff), _list_first(diff)))
+            stats['partial (not in all sets)'] += len(diff)
             files = union
         else:
             diff = sorted(list(union-intersection))
             warn('skipping {} non-overlapping files '
                  '(consider --first or --union): {}'.format(
                      len(diff), _list_first(diff)))
+            stats['skipped (not in all sets)'] += len(diff)
             files = intersection
 
-    info('processing {} files in {}'.format(len(files), ' '.join(dirs)))
+    debug('processing {} files in {}'.format(len(files), ' '.join(dirs)))
 
     for f in files:
         paths = [os.path.join(d, f) for d in dirs]
-        merge(paths, options, relative_path, recursed=True)
+        merge(paths, options, relative_path, recursed=True, stats=stats)
+
+    return stats
 
 
-def merge(paths, options=None, relative_path='', recursed=False):
+def merge(paths, options=None, relative_path='', recursed=False, stats=None):
+    if stats is None:
+        stats = defaultdict(int)
+
     files = [p for p in paths if os.path.isfile(p)]
     dirs = [p for p in paths if os.path.isdir(p)]
     missing = [p for p in paths if not os.path.exists(p)]
@@ -217,7 +247,7 @@ def merge(paths, options=None, relative_path='', recursed=False):
     assert (files and not dirs) or (dirs and not files), 'internal error'
 
     if files:
-        return merge_files(files, relative_path, options)
+        return merge_files(files, relative_path, options, stats)
     else:
         assert dirs
         if (options is None or not options.recurse) and not recursed:
@@ -227,17 +257,28 @@ def merge(paths, options=None, relative_path='', recursed=False):
             if recursed:
                 bn = os.path.basename(dirs[0])
                 relative_path = os.path.join(relative_path, bn)
-            return merge_directories(dirs, relative_path, options)
+            return merge_directories(dirs, relative_path, options, stats)
+    return stats
+
+
+def write_stats(stats, write=info):
+    write('Done, output {} files ({} errors)'.format(
+        stats['output files'], stats['errors']))
+    write('Statistics:')
+    for k, v in sorted(stats.items()):
+        if k not in ('files', 'errors'):
+            write('{:>10}\t{}'.format(v, k))
 
 
 def main(argv):
     args = argparser().parse_args(argv[1:])
     if args.verbose:
-        logging.basicConfig(level=logging.INFO)
+        logger.setLevel(logging.INFO)
     if len(args.files) < 2:
         error('need at least two files or directories to merge')
         return 1
-    merge(args.files, args)
+    stats = merge(args.files, args)
+    write_stats(stats)
     return 0
 
 
