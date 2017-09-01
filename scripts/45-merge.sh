@@ -41,7 +41,7 @@ fi
 for d in $(find "$DATADIR" -depth 1 -type d); do
     b=$(basename "$d")
     s="$STATUSDIR/$b.log"
-    if [ -e "$s" ] && egrep -F "Done $SCRIPTNAME" "$s"; then
+    if [ -e "$s" ] && egrep -qF "Done $SCRIPTNAME" "$s"; then
 	echo "$SCRIPTNAME done for $b ($s), skipping ..." >&2
     else
 	echo "Merging annotations in $d with $MERGEDIRS ..." >&2
