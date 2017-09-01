@@ -3,12 +3,14 @@
 # Map IDs in data.
 
 SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+SCRIPTNAME=$(basename "$0")
 
 REPOURL="https://github.com/cambridgeltl/uniprotidmap"
 REPOGIT="git@github.com:cambridgeltl/uniprotidmap.git"
 REPONAME="uniprotidmap"
 
 DATADIR="$SCRIPTDIR/../data/converted"
+STATUSDIR="$SCRIPTDIR/../data/status"
 IDMAP="$SCRIPTDIR/../../uniprotidmap/NCBIGENE-pr-idmapping.dat"
 
 set -eu
@@ -31,7 +33,14 @@ EOF
 fi
 
 for d in $(find "$DATADIR" -depth 1 -type d); do
-    echo "Mapping IDs in $d with $IDMAP ..." >&2
-    python "$SCRIPTDIR/../tools/mapids.py" -r -v "$IDMAP" "$d"
-    echo "Done mapping IDs in $d with $IDMAP" >&2
+    b=$(basename "$d")
+    s="$STATUSDIR/$b.log"
+    if [ -e "$s" ] && egrep -F "Done $SCRIPTNAME" "$s"; then
+	echo "$SCRIPTNAME done for $b ($s), skipping ..." >&2
+    else
+	echo "Mapping IDs in $d with $IDMAP ..." >&2
+	python "$SCRIPTDIR/../tools/mapids.py" -r -v "$IDMAP" "$d"
+	echo "Done mapping IDs in $d with $IDMAP" >&2
+	echo "Done $SCRIPTNAME" >> "$s"
+    fi
 done

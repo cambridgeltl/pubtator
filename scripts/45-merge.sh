@@ -3,8 +3,10 @@
 # Merge PubTator and other annotations
 
 SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+SCRIPTNAME=$(basename "$0")
 
 DATADIR="$SCRIPTDIR/../data/converted"
+STATUSDIR="$SCRIPTDIR/../data/status"
 MERGEDIRS="
 $SCRIPTDIR/../../hoc_annotations
 "
@@ -37,7 +39,14 @@ EOF
 fi
 
 for d in $(find "$DATADIR" -depth 1 -type d); do
-    echo "Merging annotations in $d with $MERGEDIRS ..." >&2
-    python "$SCRIPTDIR/../tools/mergeannotations.py" -v -r -f -o "$d" "$d" $MERGEDIRS
-    echo "Done merging annotations in $d with $MERGEDIRS" >&2
+    b=$(basename "$d")
+    s="$STATUSDIR/$b.log"
+    if [ -e "$s" ] && egrep -F "Done $SCRIPTNAME" "$s"; then
+	echo "$SCRIPTNAME done for $b ($s), skipping ..." >&2
+    else
+	echo "Merging annotations in $d with $MERGEDIRS ..." >&2
+	python "$SCRIPTDIR/../tools/mergeannotations.py" -v -r -f -o "$d" "$d" $MERGEDIRS
+	echo "Done merging annotations in $d with $MERGEDIRS" >&2
+	echo "Done $SCRIPTNAME" >> "$s"
+    fi
 done
