@@ -32,10 +32,10 @@ EOF
     exit 1
 fi
 
-for d in $(find "$DATADIR" -depth 1 -type d); do
+for d in $(find "$DATADIR" -mindepth 1 -maxdepth 1 -type d); do
     b=$(basename "$d")
     s="$STATUSDIR/$b.log"
-    if [ -e "$s" ] && egrep -qF "Done $SCRIPTNAME" "$s"; then
+    if [ -e "$s" ] && grep -qF "Done $SCRIPTNAME" "$s"; then
 	echo "$SCRIPTNAME done for $b ($s), skipping ..." >&2
     else
 	echo "Mapping IDs in $d with $IDMAP ..." >&2
