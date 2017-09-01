@@ -8,7 +8,7 @@ REPOURL="https://github.com/cambridgeltl/uniprotidmap"
 REPOGIT="git@github.com:cambridgeltl/uniprotidmap.git"
 REPONAME="uniprotidmap"
 
-DATADIR="$SCRIPTDIR/../data"
+DATADIR="$SCRIPTDIR/../data/converted"
 IDMAP="$SCRIPTDIR/../../uniprotidmap/NCBIGENE-pr-idmapping.dat"
 
 set -eu
@@ -30,7 +30,7 @@ EOF
     exit 1
 fi
 
-for d in $(find "$DATADIR" -maxdepth 1 -name '*-converted' -type d); do
+for d in $(find "$DATADIR" -depth 1 -type d); do
     echo "Mapping IDs in $d with $IDMAP ..." >&2
     python "$SCRIPTDIR/../tools/mapids.py" -r -v "$IDMAP" "$d"
     echo "Done mapping IDs in $d with $IDMAP" >&2

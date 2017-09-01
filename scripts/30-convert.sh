@@ -5,13 +5,13 @@
 SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 INDIR="$SCRIPTDIR/../data/original-data"
-DATADIR="$SCRIPTDIR/../data"
+OUTDIR="$SCRIPTDIR/../data/converted"
 
 set -eu
 
 for f in $(find "$INDIR" -maxdepth 1 -name '*.pubtator'); do
     b=$(basename "$f" .pubtator)
-    o="$DATADIR/${b}-converted"
+    o="$OUTDIR/${b}"
     if [ -e "$o" ]; then
 	echo "$o exists, skipping conversion." >&2
     else

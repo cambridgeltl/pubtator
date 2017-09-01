@@ -4,7 +4,7 @@
 
 SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-DATADIR="$SCRIPTDIR/../data"
+DATADIR="$SCRIPTDIR/../data/converted"
 MERGEDIRS="
 $SCRIPTDIR/../../hoc_annotations
 "
@@ -36,7 +36,7 @@ EOF
     exit 1
 fi
 
-for d in $(find "$DATADIR" -maxdepth 1 -name '*-converted' -type d); do
+for d in $(find "$DATADIR" -depth 1 -type d); do
     echo "Merging annotations in $d with $MERGEDIRS ..." >&2
     python "$SCRIPTDIR/../tools/mergeannotations.py" -v -r -f -o "$d" "$d" $MERGEDIRS
     echo "Done merging annotations in $d with $MERGEDIRS" >&2
