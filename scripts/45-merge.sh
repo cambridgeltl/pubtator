@@ -38,6 +38,6 @@ fi
 
 for d in $(find "$DATADIR" -maxdepth 1 -name '*-converted' -type d); do
     echo "Merging annotations in $d with $MERGEDIRS ..." >&2
-    python "$SCRIPTDIR/../tools/mergeannotations.py" -r -f -o "$d" "$d" $MERGEDIRS
+    python "$SCRIPTDIR/../tools/mergeannotations.py" -v -r -f -o "$d" "$d" $MERGEDIRS
     echo "Done merging annotations in $d with $MERGEDIRS" >&2
 done
