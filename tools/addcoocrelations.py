@@ -27,6 +27,8 @@ def argparser():
     ap = argparse.ArgumentParser()
     ap.add_argument('-d', '--distance', metavar='CHARS', type=int, default=None,
                     help='Character distance-based cooc (default sentence)')
+    ap.add_argument('-m', '--mark-repeated', default=False, action='store_true',
+                    help='Mark repeated entities in context')
     ap.add_argument('-p', '--include-repeated', default=False,
                     action='store_true',
                     help='Include repeated entity cooccurrences in context')
@@ -107,12 +109,10 @@ def cooccurrences(annotations, options=None, next_id=None):
     if next_id is None:
         next_id = max_id_base(annotations) + 1
 
-    relations = []
-    seen = set()
-
     max_distance = options.distance if options else None
     include_identical = options.include_self if options else False
     include_repeated = options.include_repeated if options else False
+    mark_repeated = options.mark_repeated if options else False
 
     # filter annotations to relevant ones
     filtered = [
@@ -125,9 +125,19 @@ def cooccurrences(annotations, options=None, next_id=None):
             len(annotations), len(filtered)))
         annotations = filtered
 
+    relations = []
+    seen_pairs, seen_ents = set(), set()
+
     for i in range(len(annotations)):
+        a = annotations[i]
+        aid = identity(a)
+        if aid in seen_ents:
+            if mark_repeated:
+                a.body['repeated'] = True
+        else:
+            seen_ents.add(aid)
         for j in range(i+1, len(annotations)):
-            a, b = annotations[i], annotations[j]
+            b = annotations[j]
             if a.document != b.document:
                 warn('annotations for different documents')
                 continue
@@ -136,9 +146,9 @@ def cooccurrences(annotations, options=None, next_id=None):
             if identity(a) == identity(b) and not include_identical:
                 continue
             pid = pair_identity(a, b)
-            if pid in seen and not include_repeated:
+            if pid in seen_pairs and not include_repeated:
                 continue
-            seen.add(pid)
+            seen_pairs.add(pid)
             id_ = '{}/{}'.format(a.id_path(), next_id)
             next_id += 1
             r = Cooccurrence(id_, a, b)
@@ -191,7 +201,7 @@ def sentence_cooccurrences(annotations, options=None):
     relations = []
     next_id = max_id_base(annotations) + 1
     for s, a in ann_by_sent.items():
-        cooc = cooccurrences(a, next_id=next_id)
+        cooc = cooccurrences(a, options, next_id=next_id)
         relations.extend(cooc)
         next_id += len(cooc)
     return relations
