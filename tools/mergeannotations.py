@@ -17,6 +17,7 @@ from webannotation import read_annotations
 from common import pretty_dump
 
 
+logging.basicConfig()
 logger = logging.getLogger('merge')
 #logger.setLevel(logging.INFO)
 debug, info, warn, error = logger.debug, logger.info, logger.warn, logger.error
