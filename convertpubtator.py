@@ -2,15 +2,22 @@
 
 # Convert PubTator format to other formats.
 
+from __future__ import print_function
+
 import sys
 import codecs
+import logging
 
 from os import path, makedirs
 from errno import EEXIST
-from logging import warn
 from random import random
 
 from pubtator import read_pubtator, SpanAnnotation
+
+
+logging.basicConfig()
+logger = logging.getLogger('convert')
+debug, info, warn = logger.debug, logger.info, logger.warn
 
 
 DEFAULT_ENCODING = 'utf-8'
@@ -38,6 +45,8 @@ def argparser():
                     help='Create subdirectories by document ID prefix.')
     ap.add_argument('-ss', '--segment', default=False, action='store_true',
                     help='Add sentence segmentation annotations.')
+    ap.add_argument('-v', '--verbose', default=False, action='store_true',
+                    help='Verbose output')
     ap.add_argument('files', metavar='FILE', nargs='+',
                     help='Input PubTator files')
     return ap
@@ -89,7 +98,7 @@ def write_standoff(document, options=None):
         for pa_ann in document.annotations:
             try:
                 for so_ann in pa_ann.to_ann_lines(ann_by_id):
-                    print >> ann, so_ann
+                    print(so_ann, file=ann)
             except NotImplementedError, e:
                 warn('not converting %s' % type(pa_ann).__name__)
 
@@ -154,13 +163,13 @@ def convert(fn, writer, options=None):
     with codecs.open(fn, 'rU', encoding=encoding(options)) as fl:
         for i, document in enumerate(read_pubtator(fl, options.ids), start=1):
             if i % 100 == 0:
-                print >> sys.stderr, 'Processed %d documents ...' % i
+                info('Processed {} documents ...'.format(i))
             if options.random is not None and random() > options.random:
                 continue    # skip
             if options.segment:
                 segment(document)
             writer(document, options)
-    print >> sys.stderr, 'Done, processed %d documents.' % i
+    info('Done, processed {} documents.'.format(i))
 
 
 def read_id_list(fn):
@@ -170,6 +179,8 @@ def read_id_list(fn):
 
 def main(argv):
     args = argparser().parse_args(argv[1:])
+    if args.verbose:
+        logger.setLevel(logging.INFO)
 
     if args.ids:
         args.ids = set(read_id_list(args.ids))
