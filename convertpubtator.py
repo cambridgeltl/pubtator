@@ -13,7 +13,7 @@ from errno import EEXIST
 from random import random
 
 from pubtator import read_pubtator, SpanAnnotation
-from tools.common import read_pubyears
+from tools.common import read_pubyears, set_log_level
 
 logging.basicConfig()
 logger = logging.getLogger('convert')
@@ -190,7 +190,7 @@ def main(argv):
     args = argparser().parse_args(argv[1:])
     if args.verbose:
         logger.setLevel(logging.INFO)
-
+        set_log_level(logging.INFO)
     if args.ids:
         args.ids = set(read_id_list(args.ids))
     if args.random is not None and args.random < 0 or args.random > 1:

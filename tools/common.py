@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
 import sys
+import logging
 
-from logging import debug, info, warn
+from logging import warn
 
 try:
     import ujson as json
@@ -11,12 +12,23 @@ except ImportError:
     import json
 
 
+logging.basicConfig()
+logger = logging.getLogger('common')
+debug, info, warn, error = logger.debug, logger.info, logger.warn, logger.error
+
+
 json_load = json.load
 
 json_loads = json.loads
 
+
+def set_log_level(level):
+    logger.setLevel(logging.INFO)
+
+
 def pretty_dump(obj, out=sys.stdout):
     return json.dump(obj, out, sort_keys=True, indent=2) #, separators=(',', ': '))
+
 
 def pretty_dumps(obj):
     return json.dumps(obj, sort_keys=True, indent=2) #, separators=(',', ': '))
