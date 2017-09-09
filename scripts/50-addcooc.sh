@@ -17,7 +17,7 @@ for d in $(find "$DATADIR" -mindepth 1 -maxdepth 1 -type d); do
 	echo "$SCRIPTNAME done for $b ($s), skipping ..." >&2
     else
 	echo "Adding cooccurrence relations to $d ..." >&2
-	python "$SCRIPTDIR/../tools/addcoocrelations.py" -m -r "$d"
+	python "$SCRIPTDIR/../tools/addcoocrelations.py" -m -r -v "$d"
 	echo "Done adding cooccurrence relations to $d" >&2
 	echo "Done $SCRIPTNAME" >> "$s"
     fi

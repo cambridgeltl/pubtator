@@ -10,12 +10,13 @@ import json
 import logging
 
 from collections import defaultdict, OrderedDict
-from logging import debug, info, warn, error
 
 from webannotation import read_annotations, SpanAnnotation, RelationAnnotation
 
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig()
+logger = logging.getLogger('addcooc')
+debug, info, warn, error = logger.debug, logger.info, logger.warn, logger.error
 
 
 class FormatError(Exception):
@@ -38,6 +39,8 @@ def argparser():
                     help='Include cooccurrences of entities with themselves')
     ap.add_argument('-S', '--suffix', default='.jsonld',
                     help='Suffix of files to process (with -r)')
+    ap.add_argument('-v', '--verbose', default=False, action='store_true',
+                    help='Verbose output')
     ap.add_argument('files', metavar='FILE', nargs='+',
                     help='Input annotation files')
     return ap
@@ -255,8 +258,10 @@ def process_files(files, options, count=0, errors=0, recursed=False):
 
 def main(argv):
     args = argparser().parse_args(argv[1:])
-    process_files(args.files, args)
-    return 0
+    if args.verbose:
+        logger.setLevel(logging.INFO)
+    count, errors = process_files(args.files, args)
+    return errors
 
 
 if __name__ == '__main__':
