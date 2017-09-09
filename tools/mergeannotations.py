@@ -11,15 +11,13 @@ import logging
 import errno
 
 from collections import defaultdict
-#from logging import debug, info, warn, error
 
 from webannotation import read_annotations
-from common import pretty_dump
+from common import pretty_dump, read_pubyears, set_log_level
 
 
 logging.basicConfig()
 logger = logging.getLogger('merge')
-#logger.setLevel(logging.INFO)
 debug, info, warn, error = logger.debug, logger.info, logger.warn, logger.error
 
 
@@ -36,6 +34,8 @@ def argparser():
                     help='Suffix of files to process (with -r)')
     ap.add_argument('-u', '--union', default=False, action='store_true',
                     help='Take union when files are missing (with -r)')
+    ap.add_argument('-y', '--pubyears', metavar='FILE', default=None,
+                    help='PMID-year data (adds year attribute)')
     ap.add_argument('-v', '--verbose', default=False, action='store_true',
                     help='Verbose output')
     ap.add_argument('files', nargs='+', help='Files or directories to merge')
@@ -94,6 +94,13 @@ def resolve_duplicate_ids(annotations):
             a.remap_ids(id_map)
 
 
+def fill_publication_years(annotations, year):
+    """Fill in "year" attribute for annotations missing it."""
+    for a in annotations:
+        if 'year' not in a.body:
+            a.body['year'] = year
+
+
 def mkdir_p(path):
     if path in mkdir_p.made:
         return
@@ -139,6 +146,17 @@ def merge_files(files, relative_path='', options=None, stats=None):
     resolve_duplicate_ids(annotations)
 
     merged = [a for anns in annotations for a in anns]
+
+    if options.pubyears is not None:
+        # assume basename is document ID
+        bases = set([os.path.splitext(os.path.basename(f))[0] for f in files])
+        if len(bases) > 1:
+            raise ValueError('expected unique basename, got {}'.format(bases))
+        id_ = bases.pop()
+        if id_ in options.pubyears:
+            fill_publication_years(merged, options.pubyears[id_])
+        else:
+            error('Missing pubyear for {}, not adding year data'.format(id_))
 
     output_annotations(merged, files, relative_path, options)
     stats['output files'] += 1
@@ -275,9 +293,12 @@ def main(argv):
     args = argparser().parse_args(argv[1:])
     if args.verbose:
         logger.setLevel(logging.INFO)
+        set_log_level(logging.INFO)
     if len(args.files) < 2:
         error('need at least two files or directories to merge')
         return 1
+    if args.pubyears:
+        args.pubyears = read_pubyears(args.pubyears)
     stats = merge(args.files, args)
     write_stats(stats)
     return 0
