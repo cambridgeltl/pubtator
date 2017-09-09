@@ -75,6 +75,14 @@ class Cooccurrence(RelationAnnotation):
             ann1, ann2 = ann2, ann1
         super(Cooccurrence, self).__init__(id_, 'Relation', doc, ann1.id,
                                            ann2.id, 'Cooccurrence')
+        # If annotations have a "year" attribute, propagate it to the
+        # cooccurrence
+        year1, year2 = ann1.body.get('year'), ann2.body.get('year')
+        if year1 is not None or year2 is not None:
+            if year1 != year2:
+                raise ValueError('Conflicting year for Cooccurrence: {} vs {}'.\
+                                 format(year1, year2))
+            self.body['year'] = year1
 
 
 def span_distance(a, b):
