@@ -267,6 +267,7 @@ class PubTatorDocument(object):
         self.id = id_
         self.text_sections = text_sections
         self.annotations = annotations
+        self.year = None
 
     @property
     def text(self):
@@ -307,6 +308,9 @@ class PubTatorDocument(object):
         d, u = [], 'PMID:' + self.id
         for a in self.annotations:
             d.extend(a.to_wa_jsonld_dicts(u, len(d)))
+        if self.year is not None:
+            for a in d:
+                a['body']['year'] = self.year    # propagate pubyear
         return pretty_dumps(d)
 
     def to_json(self):

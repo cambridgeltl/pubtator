@@ -17,7 +17,7 @@ from pubtator import read_pubtator, SpanAnnotation
 
 logging.basicConfig()
 logger = logging.getLogger('convert')
-debug, info, warn = logger.debug, logger.info, logger.warn
+debug, info, warn, error = logger.debug, logger.info, logger.warn, logger.error
 
 
 DEFAULT_ENCODING = 'utf-8'
@@ -45,6 +45,8 @@ def argparser():
                     help='Create subdirectories by document ID prefix.')
     ap.add_argument('-ss', '--segment', default=False, action='store_true',
                     help='Add sentence segmentation annotations.')
+    ap.add_argument('-y', '--pubyears', metavar='FILE', default=None,
+                    help='PMID-year data (adds year attribute)')
     ap.add_argument('-v', '--verbose', default=False, action='store_true',
                     help='Verbose output')
     ap.add_argument('files', metavar='FILE', nargs='+',
@@ -158,7 +160,7 @@ def segment(document):
     return document
 
 
-def convert(fn, writer, options=None):
+def convert(fn, writer, options):
     i = 0
     with codecs.open(fn, 'rU', encoding=encoding(options)) as fl:
         for i, document in enumerate(read_pubtator(fl, options.ids), start=1):
@@ -168,6 +170,13 @@ def convert(fn, writer, options=None):
                 continue    # skip
             if options.segment:
                 segment(document)
+            if options.pubyears:
+                if document.id in options.pubyears:
+                    document.year = options.pubyears[document.id]
+                else:
+                    error('Missing pubyear for {}, skipping document'.format(
+                        document.id))
+                    continue
             writer(document, options)
     info('Done, processed {} documents.'.format(i))
 
@@ -175,6 +184,33 @@ def convert(fn, writer, options=None):
 def read_id_list(fn):
     with open(fn) as f:
         return [l.rstrip('\n') for l in f.readlines()]
+
+
+def read_pubyears(fn):
+    """Read publication year data in PMID<TAB>YEAR format, return dict."""
+    pubyear = {}
+    with open(fn) as f:
+        for ln, l in enumerate(f, start=1):
+            try:
+                pmid, year = l.split()
+                year = int(year)
+            except:
+                raise ValueError('Expected PMID<TAB>YEAR in {}, got {}'.format(
+                    fn, l))
+            if pmid in pubyear:
+                if pubyear[pmid] == year:    # harmless dup
+                    debug('Duplicate PMID {} on line {} in {}'.format(
+                        pmid, ln, fn))
+                else:
+                    warn('Conflicting year for {} on line {} in {}: {} vs {}'.\
+                         format(pmid, ln, fn, pubyear[pmid], year))
+                    year = min(year, pubyear[pmid])    # use earliest
+            pubyear[pmid] = year
+            if ln % 1000000 == 0:
+                info('Read {} pubyears ...'.format(ln))
+    info('Finished reading pubyears for {} PMIDs ({} lines)'.format(
+        len(pubyear), ln))
+    return pubyear
 
 
 def main(argv):
@@ -186,6 +222,8 @@ def main(argv):
         args.ids = set(read_id_list(args.ids))
     if args.random is not None and args.random < 0 or args.random > 1:
         raise ValueError('must have 0 < ratio < 1')
+    if args.pubyears:
+        args.pubyears = read_pubyears(args.pubyears)
 
     if args.format == 'standoff':
         writer = write_standoff
