@@ -11,10 +11,10 @@ MERGEDIRS="
 $SCRIPTDIR/../../hoc_annotations
 "
 
-PMREPOURL="https://github.com/spyysalo/pubmed"
-PMREPOGIT="git@github.com:spyysalo/pubmed.git"
-PMREPONAME="pubmed"
-PUBDATES="$SCRIPTDIR/../../pubmed/pubdates.tsv"
+PMREPOURL="https://github.com/cambridgeltl/lion-pubmed"
+PMREPOGIT="git@github.com:cambridgeltl/lion-pubmed.git"
+PMREPONAME="lion-pubmed"
+PUBDATES="$SCRIPTDIR/../../lion-pubmed/data/pubdates.tsv"
 
 
 set -eu
@@ -28,7 +28,7 @@ $PMREPOURL. Try the following:
 
     cd ..
     git clone $PMREPOGIT
-    ./PMDREPONAME/REBUILD-DATA.sh
+    ./$PMREPONAME/REBUILD.sh
     cd -
 
 EOF
