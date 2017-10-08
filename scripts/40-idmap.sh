@@ -2,6 +2,8 @@
 
 # Map IDs in data.
 
+set -eu
+
 SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SCRIPTNAME=$(basename "$0")
 
@@ -11,9 +13,8 @@ UIDREPONAME="uniprotidmap"
 
 DATADIR="$SCRIPTDIR/../data/converted"
 STATUSDIR="$SCRIPTDIR/../data/status"
+INITMAP="$SCRIPTDIR/../data/idmappings/initial-idmapping.dat"
 IDMAP="$SCRIPTDIR/../../uniprotidmap/NCBIGENE-pr-idmapping.dat"
-
-set -eu
 
 if [ ! -f "$IDMAP" ]; then
     cat <<EOF >&2
@@ -34,12 +35,13 @@ fi
 for d in $(find "$DATADIR" -mindepth 1 -maxdepth 1 -type d); do
     b=$(basename "$d")
     s="$STATUSDIR/$b.log"
+    idmaps="$INITMAP,$IDMAP"
     if [ -e "$s" ] && grep -qF "Done $SCRIPTNAME" "$s"; then
 	echo "$SCRIPTNAME done for $b ($s), skipping ..." >&2
     else
-	echo "Mapping IDs in $d with $IDMAP ..." >&2
-	python "$SCRIPTDIR/../tools/mapids.py" -r -v "$IDMAP" "$d"
-	echo "Done mapping IDs in $d with $IDMAP" >&2
+	echo "Mapping IDs in $d with $idmaps ..." >&2
+	python "$SCRIPTDIR/../tools/mapids.py" -r -v "$idmaps" "$d"
+	echo "Done mapping IDs in $d with $idmaps" >&2
 	echo "Done $SCRIPTNAME" >> "$s"
     fi
 done
