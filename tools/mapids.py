@@ -87,9 +87,12 @@ def map_id_single(id_, mapidx, mapping, options, text):
                 mapped.append(mid)
             else:
                 map_id.stats['{}:filtered'.format(mapidx)] += 1
-        if len(mapped) == 1:
+        if not mapped:
+            return id_
+        elif len(mapped) == 1:
             mapped = mapped[0]
         else:
+            assert len(mapped) > 1
             map_id.stats['{}:multiple'.format(mapidx)] += 1
             warn('{} maps to multiple, arbitrarily using first: {}'.format(id_, ', '.join(mapped)))
             mapped = mapped[0]    # TODO better resolution
