@@ -26,7 +26,7 @@ class FormatError(Exception):
 def argparser():
     import argparse
     ap = argparse.ArgumentParser()
-    ap.add_argument('-p', '--prefix', default='NCBIGENE',
+    ap.add_argument('-p', '--prefix', default=None,
                     help='Namespace prefix of IDs to map')
     ap.add_argument('-r', '--recurse', default=False, action='store_true',
                     help='Recurse into subdirectories')
