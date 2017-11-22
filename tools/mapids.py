@@ -61,14 +61,18 @@ def read_mapping(fn):
             f = l.split('\t')
             if len(f) == 3:
                 id1, id_type, id2 = f
-                condition = None
+                condition, mapped_type = None, None
             elif len(f) == 4:
                 id1, id_type, id2, condstr = f
                 condition = make_condition(condstr)
+                mapped_type = None
+            elif len(f) == 5:
+                id1, id_type, id2, condstr, mapped_type = f
+                condition = make_condition(condstr)
             else:
                 raise FormatError('expected 3 or 4 TAB-separated values, got {} on line {} in {}: {}'.format(len(f), i, fn, l))
-            if (id_type, id2, condition) not in mapping[id1]:
-                mapping[id1].append((id_type, id2, condition))
+            if (id_type, id2, condition, mapped_type) not in mapping[id1]:
+                mapping[id1].append((id_type, id2, condition, mapped_type))
             read += 1
     info('Read {} from {}'.format(read, fn))
     return mapping
@@ -77,24 +81,22 @@ def read_mapping(fn):
 def map_id_single(id_, mapidx, mapping, options, text):
     if id_ not in mapping:
         map_id.stats['{}:missing'.format(mapidx)] += 1
-        return id_
+        return id_, None
     else:
         mapped = []
-        for id_type, mid, condition in mapping[id_]:
-            if condition is None:
-                mapped.append(mid)
-            elif condition(text):
-                mapped.append(mid)
+        for id_type, m_id, condition, m_type in mapping[id_]:
+            if condition is None or condition(text):
+                mapped.append((m_id, m_type))
             else:
                 map_id.stats['{}:filtered'.format(mapidx)] += 1
         if not mapped:
-            return id_
+            return id_, None
         elif len(mapped) == 1:
             mapped = mapped[0]
         else:
             assert len(mapped) > 1
             map_id.stats['{}:multiple'.format(mapidx)] += 1
-            warn('{} maps to multiple, arbitrarily using first: {}'.format(id_, ', '.join(mapped)))
+            warn('{} maps to multiple, arbitrarily using first: {}'.format(id_, ', '.join([m[0] for m in mapped])))
             mapped = mapped[0]    # TODO better resolution
         map_id.stats['{}:mapped'.format(mapidx)] += 1
         return mapped
@@ -103,10 +105,12 @@ def map_id_single(id_, mapidx, mapping, options, text):
 def map_id(id_, mappings, options, text):
     if options.prefix:
         if not id_.startswith(options.prefix):
-            return id_    # prefix filter
+            return id_, None    # prefix filter
+    mapped_type = None
     for idx, mapping in enumerate(mappings):
-        id_ = map_id_single(id_, idx, mapping, options, text)
-    return id_
+        id_, m_type = map_id_single(id_, idx, mapping, options, text)
+        mapped_type = mapped_type if m_type is None else m_type
+    return id_, mapped_type
 map_id.stats = defaultdict(int)
 
 
@@ -121,7 +125,10 @@ def map_ids(data, mappings, options=None, objtext=None):
             map_ids(d, mappings, options, objtext)
     elif isinstance(data, dict):
         if 'id' in data:
-            data['id'] = map_id(data['id'], mappings, options, objtext)
+            m_id, m_type = map_id(data['id'], mappings, options, objtext)
+            data['id'] = m_id
+            if m_type is not None:
+                data['type'] = m_type
         if 'text' in data:
             objtext = data['text']
         for k, v in data.iteritems():
