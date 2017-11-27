@@ -185,6 +185,8 @@ class SpanAnnotation(object):
             return 'NCBITaxon'
         elif type_ == 'Gene':
             return 'NCBIGENE'    # Entrez gene ID
+        elif type_ == 'Disease':
+            return 'MESH'
         elif type_ == 'Chemical':
             return 'MESH'
         elif type_ in ('DNAMutation', 'ProteinMutation', 'SNP'):
