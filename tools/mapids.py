@@ -44,6 +44,7 @@ def argparser():
 def make_condition(condition):
     if not condition or not condition.strip():
         return None
+    condition = condition.strip()
     if condition.startswith('/') and condition.endswith('/'):
         # regular expression matching
         e = re.compile(condition[1:-1])
@@ -71,6 +72,8 @@ def read_mapping(fn):
                 condition = make_condition(condstr)
             else:
                 raise FormatError('expected 3 or 4 TAB-separated values, got {} on line {} in {}: {}'.format(len(f), i, fn, l))
+            id1, id_type, id2 = id1.strip(), id_type.strip(), id2.strip()
+            mapped_type = None if mapped_type is None else mapped_type.strip()
             if (id_type, id2, condition, mapped_type) not in mapping[id1]:
                 mapping[id1].append((id_type, id2, condition, mapped_type))
             read += 1
