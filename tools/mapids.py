@@ -126,7 +126,9 @@ def map_ids(data, mappings, options=None, objtext=None):
     elif isinstance(data, dict):
         if 'id' in data:
             m_id, m_type = map_id(data['id'], mappings, options, objtext)
-            data['id'] = m_id
+            if m_id != data['id']:
+                data['origid'] = data['id']
+                data['id'] = m_id
             if m_type is not None:
                 data['type'] = m_type
         if 'text' in data:
